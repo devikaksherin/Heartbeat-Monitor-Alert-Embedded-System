@@ -93,7 +93,9 @@ The current implementation is a virtual simulation. A physical pulse sensor was 
 - Develop a compact PCB-based version
 
 ## 📚 Project Status
+## 🔗 Wokwi Simulation
 
+[▶️ Run the Heartbeat Monitor Simulation on Wokwi](https://wokwi.com/projects/472491181972524033)
 **Virtual simulation: Completed ✅**
 
 **Physical hardware implementation: Future work 🔧**
