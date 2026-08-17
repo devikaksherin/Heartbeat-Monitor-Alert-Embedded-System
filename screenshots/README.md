@@ -9,3 +9,5 @@ This folder contains screenshots demonstrating the working Wokwi simulation.
 3. Low heart rate alert
 4. High heart rate alert
 5. Serial Monitor showing BPM calculation
+
+
