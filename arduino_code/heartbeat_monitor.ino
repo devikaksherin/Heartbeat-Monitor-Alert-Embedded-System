@@ -7,32 +7,34 @@
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
-// ---------------- PINS ----------------
+// Pins
 const int POT_PIN = A0;
 const int GREEN_LED = 6;
 const int RED_LED = 7;
 const int BUZZER = 8;
 
-// ---------------- THRESHOLDS ----------------
+// Thresholds
 const int LOW_BPM = 60;
 const int HIGH_BPM = 100;
 
-// ---------------- HEARTBEAT ----------------
+// Heartbeat detection
 bool beatDetected = false;
 
 unsigned long lastBeatTime = 0;
 unsigned long currentBeatTime = 0;
 
 int bpm = 0;
+int smoothedBPM = 0;
 
-// ---------------- SMOOTHING ----------------
-const int NUM_READINGS = 5;
+// Moving average
+const int NUM_READINGS = 3;
 
 int bpmReadings[NUM_READINGS];
 int readingIndex = 0;
 int readingCount = 0;
 
-int smoothedBPM = 0;
+// Previous target BPM
+int previousTargetBPM = 0;
 
 
 // =================================================
@@ -47,11 +49,8 @@ void setup() {
   pinMode(RED_LED, OUTPUT);
   pinMode(BUZZER, OUTPUT);
 
-  // Start OLED
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
-
     Serial.println("OLED not found!");
-
     while (true);
   }
 
@@ -69,7 +68,6 @@ void setup() {
 
   delay(2000);
 
-  // Initialize BPM array
   for (int i = 0; i < NUM_READINGS; i++) {
     bpmReadings[i] = 0;
   }
@@ -94,7 +92,6 @@ void addBPMReading(int newBPM) {
     readingCount++;
   }
 
-  // Calculate average
   long total = 0;
 
   for (int i = 0; i < readingCount; i++) {
@@ -106,15 +103,30 @@ void addBPMReading(int newBPM) {
 
 
 // =================================================
+// RESET SMOOTHING
+// =================================================
+
+void resetSmoothing() {
+
+  readingIndex = 0;
+  readingCount = 0;
+  smoothedBPM = 0;
+
+  for (int i = 0; i < NUM_READINGS; i++) {
+    bpmReadings[i] = 0;
+  }
+}
+
+
+// =================================================
 // MAIN LOOP
 // =================================================
 
 void loop() {
 
-  // Read potentiometer
   int potValue = analogRead(POT_PIN);
 
-  // Potentiometer controls simulated heart rate
+  // Potentiometer controls simulated BPM
   int targetBPM = map(
     potValue,
     0,
@@ -123,25 +135,36 @@ void loop() {
     140
   );
 
-  // Calculate simulated beat interval
+
+  // If BPM changes significantly,
+  // clear old readings.
+  if (abs(targetBPM - previousTargetBPM) > 10) {
+
+    resetSmoothing();
+
+    lastBeatTime = 0;
+  }
+
+  previousTargetBPM = targetBPM;
+
+
+  // Calculate beat interval
   unsigned long beatInterval =
       60000UL / targetBPM;
 
-  // Create repeating heartbeat cycle
+
+  // Create simulated heartbeat
   unsigned long timeInCycle =
       millis() % beatInterval;
 
-  // Simulated heartbeat waveform
   int pulseSignal;
 
   if (timeInCycle < 80) {
 
-    // Heartbeat peak
     pulseSignal = 1023;
 
   } else {
 
-    // Resting signal
     pulseSignal = 100;
   }
 
@@ -156,16 +179,13 @@ void loop() {
 
     currentBeatTime = millis();
 
-    // Calculate interval between beats
     if (lastBeatTime > 0) {
 
       unsigned long interval =
           currentBeatTime - lastBeatTime;
 
-      // Calculate BPM
       bpm = 60000UL / interval;
 
-      // Add reading to moving average
       addBPMReading(bpm);
 
       Serial.print("Beat detected | ");
@@ -181,7 +201,7 @@ void loop() {
   }
 
 
-  // Reset after heartbeat peak
+  // Reset beat detection
   if (pulseSignal < 700) {
 
     beatDetected = false;
@@ -240,7 +260,6 @@ void loop() {
 
   display.setTextSize(1);
   display.setCursor(0, 0);
-
   display.println("HEARTBEAT MONITOR");
 
   display.setTextSize(2);
