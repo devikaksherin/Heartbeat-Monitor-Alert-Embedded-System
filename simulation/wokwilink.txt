@@ -1,0 +1,7 @@
+# Heartbeat Monitor with Alert System
+
+A simple embedded system that monitors heartbeat rate and provides an alert when an abnormal reading is detected.
+
+### Simulation
+🔗 Wokwi Simulation: [https://wokwi.com/projects/472491181972524033]
+
